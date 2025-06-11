@@ -12,10 +12,10 @@ export default function Login() {
     setError("");
     try {
       await signInWithPopup(auth, googleProvider);
-      // Redirect or show success
       window.location.href = "/";
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) setError(err.message);
+      else setError("An unknown error occurred.");
     }
   };
 
@@ -24,10 +24,10 @@ export default function Login() {
     setError("");
     try {
       await signInWithPopup(auth, githubProvider);
-      // Redirect or show success
       window.location.href = "/";
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) setError(err.message);
+      else setError("An unknown error occurred.");
     }
   };
 
