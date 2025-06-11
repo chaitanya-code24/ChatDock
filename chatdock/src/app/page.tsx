@@ -36,7 +36,7 @@ export default function Home() {
               Try Free
             </a>
             <a
-              href="/login"
+              href="/auth"
               className="px-3 sm:px-4 py-1.5 rounded-full font-semibold bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow transition-all duration-200 hover:scale-105 hover:shadow-pink-400/40 hover:bg-gradient-to-l focus:outline-none focus:ring-2 focus:ring-pink-400"
             >
               Login
