@@ -1,4 +1,5 @@
 "use client";
+
 import { useState } from "react";
 import { auth, googleProvider, githubProvider } from "@/firebase";
 import { signInWithPopup } from "firebase/auth";
@@ -42,10 +43,12 @@ export default function Login() {
         </div>
 
         {error && (
-          <div className="bg-pink-900/60 text-pink-300 text-sm rounded p-2 text-center">{error}</div>
+          <div className="bg-pink-900/60 text-pink-300 text-sm rounded p-2 text-center">
+            {error}
+          </div>
         )}
 
-        <form className="flex flex-col gap-4" onSubmit={e => e.preventDefault()}>
+        <form className="flex flex-col gap-4" onSubmit={(e) => e.preventDefault()}>
           <div>
             <label className="block text-sm font-medium text-pink-300 mb-1">Email</label>
             <input
@@ -107,6 +110,7 @@ export default function Login() {
             <svg className="w-5 h-5" viewBox="0 0 48 48"><g><path fill="#FFC107" d="M43.6 20.5H42V20.5H24V27.5H35.2C33.7 31.1 30.1 33.5 24 33.5C17.4 33.5 12 28.1 12 21.5C12 14.9 17.4 9.5 24 9.5C27.1 9.5 29.8 10.6 31.8 12.5L36.6 7.7C33.4 4.7 29.1 2.5 24 2.5C12.9 2.5 4 11.4 4 21.5C4 31.6 12.9 40.5 24 40.5C34.6 40.5 43.5 32.2 43.5 21.5C43.5 20.3 43.5 19.4 43.6 20.5Z"/><path fill="#FF3D00" d="M6.3 14.1L12.1 18.1C13.7 14.6 18.3 11.5 24 11.5C27.1 11.5 29.8 12.6 31.8 14.5L36.6 9.7C33.4 6.7 29.1 4.5 24 4.5C16.1 4.5 9.1 10.2 6.3 14.1Z"/><path fill="#4CAF50" d="M24 44.5C30.1 44.5 35.7 41.7 39.2 37.6L33.8 33.1C31.7 34.9 28.9 36.5 24 36.5C17.4 36.5 12 31.1 12 24.5C12 23.7 12.1 22.9 12.3 22.1L6.3 26.9C9.1 31.8 16.1 37.5 24 44.5Z"/><path fill="#1976D2" d="M43.6 20.5H42V20.5H24V27.5H35.2C34.5 29.2 33.2 30.7 31.8 32.1L36.6 36.9C39.5 34.2 41.5 30.5 43.6 20.5Z"/></g></svg>
             Continue with Google
           </button>
+
           <button
             type="button"
             onClick={handleGithubLogin}
