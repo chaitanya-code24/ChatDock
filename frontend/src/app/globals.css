@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+:root {
+  --background: #09070f;
+  --foreground: #f5f3ff;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+.btn-primary {
+  background: #a855f7;
+  color: #0b0b0b;
+  border: 1px solid #a855f7;
+}
+
+.btn-primary:hover {
+  background: #c084fc;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: #d8b4fe;
+  border: 1px solid #5b4a84;
+}
+
+.btn-secondary:hover {
+  background: #1a1328;
+}
+
+.btn-danger {
+  background: #f43f5e;
+  color: #170208;
+  border: 1px solid #f43f5e;
+}
+
+.btn-danger:hover {
+  background: #fb7185;
+}
+
+.panel {
+  background: #12101a;
+  border: 1px solid #2b2540;
+}
+
+.input-dark {
+  background: #0e0c15;
+  border: 1px solid #3a3155;
+  color: #f5f3ff;
+}
