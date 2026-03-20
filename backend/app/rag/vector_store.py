@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 from uuid import UUID
 
 from app.core.config import settings
 from app.database.connection import get_db_session, store, use_database
 from app.database.models import ChunkORM
+from app.rag.document_processor import extract_chunk_metadata
 from app.rag.embeddings import build_dense_embedding
 from app.rag.retrieval import lexical_similarity
 
@@ -53,18 +55,24 @@ class VectorStore:
         if not chunks or self._client is None or qmodels is None:
             return
 
-        points = [
-            qmodels.PointStruct(
-                id=str(chunk.id),
-                vector=build_dense_embedding(chunk.text),
-                payload={
-                    "bot_id": str(bot_id),
-                    "document_id": str(chunk.document_id),
-                    "text": chunk.text,
-                },
+        points = []
+        for chunk in chunks:
+            metadata = extract_chunk_metadata(chunk.text)
+            points.append(
+                qmodels.PointStruct(
+                    id=str(chunk.id),
+                    vector=build_dense_embedding(chunk.text),
+                    payload={
+                        "bot_id": str(bot_id),
+                        "document_id": str(chunk.document_id),
+                        "text": chunk.text,
+                        "heading": metadata["heading"],
+                        "normalized_heading": metadata.get("normalized_heading", metadata["heading"].lower()),
+                        "topic": metadata["topic"],
+                        "type": metadata["type"],
+                    },
+                )
             )
-            for chunk in chunks
-        ]
         self._client.upsert(collection_name=settings.qdrant_collection, points=points)
 
     def search(self, bot_id: UUID, query: str, limit: int) -> list[SearchResult]:
@@ -79,7 +87,11 @@ class VectorStore:
                         must=[qmodels.FieldCondition(key="bot_id", match=qmodels.MatchValue(value=str(bot_id)))]
                     ),
                 )
-                return [SearchResult(chunk_id=UUID(str(point.id)), score=float(point.score)) for point in points]
+                results = [SearchResult(chunk_id=UUID(str(point.id)), score=float(point.score)) for point in points]
+                # If vector search looks unconfident (common in dev fallback embeddings),
+                # fall back to lexical scoring to avoid returning irrelevant context.
+                if results and results[0].score >= 0.15:
+                    return results
             except Exception:
                 pass
 
@@ -91,7 +103,7 @@ class VectorStore:
         )
         return [SearchResult(chunk_id=chunk_id, score=score) for score, chunk_id in ranked[:limit] if score > 0]
 
-    def _ensure_collection(self, client: QdrantClient) -> None:
+    def _ensure_collection(self, client: Any) -> None:
         existing = [col.name for col in client.get_collections().collections]
         if settings.qdrant_collection in existing:
             return

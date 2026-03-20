@@ -6,8 +6,8 @@ from collections import Counter
 from app.rag.chunking import TOKEN_PATTERN
 
 def lexical_similarity(query: str, candidate: str) -> float:
-    query_terms = Counter(TOKEN_PATTERN.findall(query.lower()))
-    candidate_terms = Counter(TOKEN_PATTERN.findall(candidate.lower()))
+    query_terms = Counter(TOKEN_PATTERN.findall((query or "").lower().replace("-", "")))
+    candidate_terms = Counter(TOKEN_PATTERN.findall((candidate or "").lower().replace("-", "")))
     if not query_terms or not candidate_terms:
         return 0.0
 

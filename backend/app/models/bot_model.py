@@ -12,4 +12,11 @@ class BotRecord:
     bot_name: str
     description: str | None
     created_at: datetime
+    archived: bool = False
+    tone: str = "professional"
+    answer_length: str = "balanced"
+    fallback_behavior: str = "strict"
+    system_prompt: str | None = None
+    greeting_message: str | None = None
+    updated_at: datetime | None = None
 

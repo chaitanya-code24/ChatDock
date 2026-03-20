@@ -29,7 +29,14 @@ class BotORM(Base):
     user_id: Mapped[str] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), index=True)
     bot_name: Mapped[str] = mapped_column(String(80))
     description: Mapped[str | None] = mapped_column(String(400), nullable=True)
+    archived: Mapped[bool] = mapped_column(Boolean, default=False)
+    tone: Mapped[str] = mapped_column(String(20), default="professional")
+    answer_length: Mapped[str] = mapped_column(String(20), default="balanced")
+    fallback_behavior: Mapped[str] = mapped_column(String(20), default="strict")
+    system_prompt: Mapped[str | None] = mapped_column(Text, nullable=True)
+    greeting_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
 
 
 class DocumentORM(Base):
@@ -57,10 +64,22 @@ class ChatLogORM(Base):
     __tablename__ = "chat_logs"
 
     id: Mapped[str] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    conversation_id: Mapped[str] = mapped_column(UUID(as_uuid=True), index=True)
     bot_id: Mapped[str] = mapped_column(UUID(as_uuid=True), ForeignKey("bots.id"), index=True)
     user_id: Mapped[str] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), index=True)
     question: Mapped[str] = mapped_column(Text)
     response: Mapped[str] = mapped_column(Text)
     cached: Mapped[bool] = mapped_column(Boolean, default=False)
     timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+
+class ChatThreadORM(Base):
+    __tablename__ = "chat_threads"
+
+    id: Mapped[str] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    bot_id: Mapped[str] = mapped_column(UUID(as_uuid=True), ForeignKey("bots.id"), index=True)
+    user_id: Mapped[str] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), index=True)
+    title: Mapped[str] = mapped_column(String(160))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
 

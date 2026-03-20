@@ -1,9 +1,10 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { login, setSession } from "../../services/auth";
+import { getToken, login, setSession } from "../../services/auth";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -12,12 +13,22 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  useEffect(() => {
+    if (getToken()) {
+      router.replace("/dashboard");
+    }
+  }, [router]);
+
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (loading) {
+      return;
+    }
+
     setError("");
     setLoading(true);
     try {
-      const result = await login(email, password);
+      const result = await login(email.trim(), password);
       setSession(result.access_token, result.email);
       router.push("/dashboard");
     } catch (err) {
@@ -28,42 +39,63 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#09070f] via-[#120b1f] to-[#09070f] px-6 py-12">
-      <div className="panel mx-auto max-w-md rounded-xl p-8 shadow-[0_12px_36px_rgba(0,0,0,0.4)]">
-        <h1 className="text-2xl font-bold text-purple-200">Login</h1>
-        <p className="mt-2 text-sm text-purple-100/80">Access your ChatDock dashboard.</p>
-        <form className="mt-6 space-y-4" onSubmit={onSubmit}>
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="input-dark w-full rounded-md px-3 py-2"
-            required
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="input-dark w-full rounded-md px-3 py-2"
-            required
-          />
-          {error ? <p className="text-sm text-red-400">{error}</p> : null}
-          <button
-            type="submit"
-            disabled={loading}
-            className="btn-primary w-full rounded-md px-4 py-2 font-semibold disabled:opacity-60"
-          >
-            {loading ? "Signing in..." : "Sign in"}
-          </button>
-        </form>
-        <p className="mt-4 text-sm text-purple-100/80">
-          Need an account?{" "}
-          <a className="font-medium text-purple-300 hover:text-purple-200" href="/register">
-            Register
-          </a>
-        </p>
+    <div className="auth-page">
+      <div className="auth-shell">
+        <aside className="auth-brand">
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/25 px-3 py-1 text-xs font-semibold">
+            ChatDock
+          </span>
+          <h2>Welcome back</h2>
+          <p>Sign in to manage bots, upload documents, and monitor analytics.</p>
+          <ul className="auth-feature-list">
+            <li>• Build document-aware AI bots</li>
+            <li>• Embed widgets and API integrations</li>
+            <li>• Track usage and cache performance</li>
+          </ul>
+        </aside>
+
+        <section className="auth-card">
+          <h1>Login</h1>
+          <p>Continue to your ChatDock workspace.</p>
+
+          <form onSubmit={onSubmit}>
+            <label className="auth-label">
+              <span className="auth-label-text">Email</span>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@company.com"
+                className="auth-input"
+                autoComplete="email"
+                required
+              />
+            </label>
+
+            <label className="auth-label">
+              <span className="auth-label-text">Password</span>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                className="auth-input"
+                autoComplete="current-password"
+                required
+              />
+            </label>
+
+            {error ? <p className="auth-error">{error}</p> : null}
+
+            <button type="submit" className="auth-primary" disabled={loading}>
+              {loading ? "Signing in..." : "Sign In"}
+            </button>
+          </form>
+
+          <p className="auth-footer">
+            New to ChatDock? <Link href="/register">Create account</Link>
+          </p>
+        </section>
       </div>
     </div>
   );

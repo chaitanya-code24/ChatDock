@@ -9,31 +9,42 @@ from sqlalchemy import delete, func, select
 from app.database.connection import get_db_session, use_database, store
 from app.database.models import BotORM, ChatLogORM, ChunkORM, DocumentORM
 from app.models.bot_model import BotRecord
-from app.schemas.bot_schema import BotSummary
+from app.rag.vector_store import vector_store
+from app.schemas.bot_schema import BotSummary, BotUpdate
 
 
 class BotService:
     def create(self, user_id: UUID, bot_name: str, description: str | None) -> BotRecord:
         if use_database():
             for db in get_db_session():
+                now = datetime.now(timezone.utc)
                 record = BotORM(
                     id=store.next_id(),
                     user_id=user_id,
                     bot_name=bot_name.strip(),
                     description=description.strip() if description else None,
-                    created_at=datetime.now(timezone.utc),
+                    created_at=now,
+                    updated_at=now,
+                    archived=False,
+                    tone="professional",
+                    answer_length="balanced",
+                    fallback_behavior="strict",
+                    system_prompt=None,
+                    greeting_message=None,
                 )
                 db.add(record)
                 db.commit()
                 db.refresh(record)
                 return self._to_record(record)
 
+        now = datetime.now(timezone.utc)
         bot = BotRecord(
             id=store.next_id(),
             user_id=user_id,
             bot_name=bot_name.strip(),
             description=description.strip() if description else None,
-            created_at=datetime.now(timezone.utc),
+            created_at=now,
+            updated_at=now,
         )
         store.bots[bot.id] = bot
         return bot
@@ -76,6 +87,13 @@ class BotService:
                     bot_name=record.bot_name,
                     description=record.description,
                     created_at=record.created_at,
+                    archived=record.archived,
+                    tone=record.tone,
+                    answer_length=record.answer_length,
+                    fallback_behavior=record.fallback_behavior,
+                    system_prompt=record.system_prompt,
+                    greeting_message=record.greeting_message,
+                    updated_at=record.updated_at,
                     document_count=int(document_count),
                     chunk_count=int(chunk_count),
                 )
@@ -89,9 +107,69 @@ class BotService:
             bot_name=bot.bot_name,
             description=bot.description,
             created_at=bot.created_at,
+            archived=bot.archived,
+            tone=bot.tone,
+            answer_length=bot.answer_length,
+            fallback_behavior=bot.fallback_behavior,
+            system_prompt=bot.system_prompt,
+            greeting_message=bot.greeting_message,
+            updated_at=bot.updated_at,
             document_count=document_count,
             chunk_count=chunk_count,
         )
+
+    def update_owned(self, user_id: UUID, bot_id: UUID, payload: BotUpdate) -> BotRecord:
+        if use_database():
+            for db in get_db_session():
+                record = db.get(BotORM, bot_id)
+                if record is None or record.user_id != user_id:
+                    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bot not found")
+                update_data = payload.model_dump(exclude_unset=True)
+                for key, value in update_data.items():
+                    if key in {"bot_name", "description", "system_prompt", "greeting_message"}:
+                        value = value.strip() if isinstance(value, str) else value
+                        if value == "":
+                            value = None
+                    setattr(record, key, value)
+                record.updated_at = datetime.now(timezone.utc)
+                db.commit()
+                db.refresh(record)
+                return self._to_record(record)
+
+        bot = self.get_owned(user_id, bot_id)
+        update_data = payload.model_dump(exclude_unset=True)
+        for key, value in update_data.items():
+            if key in {"bot_name", "description", "system_prompt", "greeting_message"}:
+                value = value.strip() if isinstance(value, str) else value
+                if value == "":
+                    value = None
+            setattr(bot, key, value)
+        bot.updated_at = datetime.now(timezone.utc)
+        store.bots[bot_id] = bot
+        return bot
+
+    def set_archived(self, user_id: UUID, bot_id: UUID, archived: bool) -> BotRecord:
+        if use_database():
+            for db in get_db_session():
+                record = db.get(BotORM, bot_id)
+                if record is None or record.user_id != user_id:
+                    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bot not found")
+                record.archived = archived
+                record.updated_at = datetime.now(timezone.utc)
+                db.commit()
+                db.refresh(record)
+                return self._to_record(record)
+
+        bot = self.get_owned(user_id, bot_id)
+        bot.archived = archived
+        bot.updated_at = datetime.now(timezone.utc)
+        store.bots[bot_id] = bot
+        return bot
+
+    def reindex_owned(self, user_id: UUID, bot_id: UUID) -> BotSummary:
+        self.get_owned(user_id, bot_id)
+        vector_store.upsert_bot_chunks(bot_id)
+        return self.to_summary(bot_id)
 
     def delete_owned(self, user_id: UUID, bot_id: UUID) -> None:
         if use_database():
@@ -130,6 +208,13 @@ class BotService:
             bot_name=record.bot_name,
             description=record.description,
             created_at=record.created_at,
+            archived=record.archived,
+            tone=record.tone,
+            answer_length=record.answer_length,
+            fallback_behavior=record.fallback_behavior,
+            system_prompt=record.system_prompt,
+            greeting_message=record.greeting_message,
+            updated_at=record.updated_at,
         )
 
 

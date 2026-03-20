@@ -25,17 +25,27 @@ class RateLimiter:
             except Exception:
                 self._redis = None
 
-    def check(self, subject: str) -> None:
+    def check(
+        self,
+        subject: str,
+        limit: int | None = None,
+        window_seconds: int | None = None,
+    ) -> None:
+        if limit is None:
+            limit = settings.rate_limit_requests
+        if window_seconds is None:
+            window_seconds = settings.rate_limit_window_seconds
+
         if self._redis is not None:
-            self._check_redis(subject)
+            self._check_redis(subject, limit, window_seconds)
             return
 
         now = datetime.now(timezone.utc)
         bucket = self._buckets[subject]
-        cutoff = now - timedelta(seconds=settings.rate_limit_window_seconds)
+        cutoff = now - timedelta(seconds=window_seconds)
         while bucket and bucket[0] < cutoff:
             bucket.popleft()
-        if len(bucket) >= settings.rate_limit_requests:
+        if len(bucket) >= limit:
             raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Rate limit exceeded")
         bucket.append(now)
 
@@ -47,12 +57,12 @@ class RateLimiter:
             return
         self._buckets.clear()
 
-    def _check_redis(self, subject: str) -> None:
+    def _check_redis(self, subject: str, limit: int, window_seconds: int) -> None:
         key = f"chatdock:ratelimit:{subject}"
         count = self._redis.incr(key)  # type: ignore[union-attr]
         if count == 1:
-            self._redis.expire(key, settings.rate_limit_window_seconds)  # type: ignore[union-attr]
-        if count > settings.rate_limit_requests:
+            self._redis.expire(key, window_seconds)  # type: ignore[union-attr]
+        if count > limit:
             raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Rate limit exceeded")
 
 

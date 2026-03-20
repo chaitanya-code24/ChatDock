@@ -1,25 +1,21 @@
 "use client";
 
-import { useEffect, useSyncExternalStore, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { clearSession, getToken, getUserEmail } from "../../services/auth";
-import { createBot, getAnalytics, listBots, type AnalyticsOverview, type Bot } from "../../services/bot";
+import { AppShell } from "../../components/dashboard/app-shell";
+import { getToken } from "../../services/auth";
+import { createBot, deleteBot, listBots, type Bot } from "../../services/bot";
 
 export default function DashboardPage() {
-  const [analytics, setAnalytics] = useState<AnalyticsOverview | null>(null);
   const [bots, setBots] = useState<Bot[]>([]);
-  const [error, setError] = useState("");
+  const [status, setStatus] = useState("");
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [newBotName, setNewBotName] = useState("");
   const [newBotDescription, setNewBotDescription] = useState("");
   const [creating, setCreating] = useState(false);
-  const [showCreateCard, setShowCreateCard] = useState(false);
+  const [deletingBotId, setDeletingBotId] = useState("");
   const router = useRouter();
-  const userEmail = useSyncExternalStore(
-    () => () => {},
-    () => getUserEmail(),
-    () => null,
-  );
 
   useEffect(() => {
     const token = getToken();
@@ -27,22 +23,16 @@ export default function DashboardPage() {
       router.replace("/login");
       return;
     }
-
-    async function load() {
-      try {
-        const [overview, botList] = await Promise.all([getAnalytics(token), listBots(token)]);
-        setAnalytics(overview);
-        setBots(botList);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load dashboard");
-      }
-    }
-    load();
+    void refreshBots(token);
   }, [router]);
 
-  function logout() {
-    clearSession();
-    router.push("/login");
+  async function refreshBots(token: string) {
+    try {
+      const list = await listBots(token);
+      setBots(list);
+    } catch (err) {
+      setStatus(readError(err, "Failed to load bots."));
+    }
   }
 
   async function onCreateBot() {
@@ -50,130 +40,191 @@ export default function DashboardPage() {
     if (!token || creating) {
       return;
     }
-    const name = newBotName.trim();
-    const description = newBotDescription.trim();
-    if (name.length < 2 || name.length > 80) {
-      setError("Bot name must be between 2 and 80 characters.");
-      return;
-    }
-    if (description.length > 400) {
-      setError("Description must be 400 characters or less.");
+    const botName = newBotName.trim();
+    if (botName.length < 2) {
+      setStatus("Bot name should be at least 2 characters.");
       return;
     }
 
     setCreating(true);
-    setError("");
+    setStatus("");
     try {
-      const created = await createBot(token, name, description || undefined);
-      const [overview, botList] = await Promise.all([getAnalytics(token), listBots(token)]);
-      setAnalytics(overview);
-      setBots(botList);
+      const created = await createBot(token, botName, newBotDescription.trim() || undefined);
+      setShowCreateModal(false);
       setNewBotName("");
       setNewBotDescription("");
+      await refreshBots(token);
       router.push(`/dashboard/bots?botId=${created.id}&section=manage`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create bot");
+      setStatus(readError(err, "Could not create bot."));
     } finally {
       setCreating(false);
     }
   }
 
+  async function onDeleteBot(bot: Bot) {
+    const token = getToken();
+    if (!token || deletingBotId) {
+      return;
+    }
+    if (!window.confirm(`Delete "${bot.bot_name}"?`)) {
+      return;
+    }
+    setDeletingBotId(bot.id);
+    setStatus("");
+    try {
+      await deleteBot(token, bot.id);
+      await refreshBots(token);
+      setStatus("Bot deleted.");
+    } catch (err) {
+      setStatus(readError(err, "Delete failed."));
+    } finally {
+      setDeletingBotId("");
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#09070f] via-[#120b1f] to-[#09070f] p-6">
-      <div className="mx-auto max-w-5xl">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-purple-200">Dashboard</h1>
-            <p className="text-sm text-purple-100/80">{userEmail || "Authenticated user"}</p>
-          </div>
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={() => setShowCreateCard((prev) => !prev)}
-              className="btn-primary rounded-md px-4 py-2 text-sm font-semibold"
-            >
-              {showCreateCard ? "Close Create" : "Create Bot"}
-            </button>
-            <button onClick={logout} className="btn-primary rounded-md px-4 py-2 text-sm font-semibold">
-              Logout
-            </button>
-          </div>
+    <AppShell>
+      <section className="cd-page-head">
+        <div>
+          <h1 className="cd-page-title">Your Bots</h1>
+          <p className="cd-page-subtitle">Manage your document-aware chatbots</p>
         </div>
+        <button type="button" className="cd-btn-dark" onClick={() => setShowCreateModal(true)}>
+          <span aria-hidden="true">+</span>
+          Create Bot
+        </button>
+      </section>
 
-        {error ? <p className="mt-4 text-sm text-red-400">{error}</p> : null}
-
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          <StatCard label="Bots" value={analytics?.total_bots ?? 0} />
-          <StatCard label="Documents" value={analytics?.total_documents ?? 0} />
-          <StatCard label="Chunks" value={analytics?.total_chunks ?? 0} />
-          <StatCard label="Queries" value={analytics?.total_queries ?? 0} />
-          <StatCard label="Cached" value={analytics?.cached_queries ?? 0} />
-        </div>
-
-        {showCreateCard ? (
-          <div className="panel mt-8 rounded-xl p-6">
-            <h2 className="text-lg font-semibold text-purple-200">Create Bot</h2>
-            <p className="mt-1 text-sm text-purple-100/75">Create first, then continue in Manage Bot for uploads, chat testing, and integrations.</p>
-            <div className="mt-4 grid gap-3 md:grid-cols-2">
-              <input
-                value={newBotName}
-                onChange={(e) => setNewBotName(e.target.value)}
-                placeholder="Bot name"
-                className="input-dark rounded-md px-3 py-2"
-                minLength={2}
-                maxLength={80}
-                required
-              />
-              <input
-                value={newBotDescription}
-                onChange={(e) => setNewBotDescription(e.target.value)}
-                placeholder="Short description"
-                className="input-dark rounded-md px-3 py-2"
-                maxLength={400}
-              />
-            </div>
-            <button
-              type="button"
-              onClick={onCreateBot}
-              disabled={creating}
-              className="btn-primary mt-4 rounded-md px-4 py-2 text-sm font-semibold disabled:opacity-50"
-            >
-              {creating ? "Creating..." : "Create and Open Manage"}
-            </button>
-          </div>
-        ) : null}
-
-        <div className="panel mt-8 rounded-xl p-6">
-          <h2 className="text-lg font-semibold text-purple-200">Your Bots</h2>
-          <div className="mt-4 space-y-3">
-            {bots.length === 0 ? <p className="text-sm text-purple-100/80">No bots yet. Create one from the Create Bot button.</p> : null}
-            {bots.map((bot) => (
-              <div key={bot.id} className="rounded-lg border border-purple-900/60 bg-[#0f0c18] p-4">
-                <p className="font-medium text-purple-100">{bot.bot_name}</p>
-                <p className="mt-1 text-sm text-purple-100/80">{bot.description || "No description"}</p>
-                <p className="mt-1 text-xs text-purple-300/70">
-                  Documents: {bot.document_count} | Chunks: {bot.chunk_count}
-                </p>
-                <a
-                  href={`/dashboard/bots?botId=${bot.id}&section=manage`}
-                  className="btn-secondary mt-3 inline-block rounded-md px-3 py-1.5 text-xs font-semibold"
-                >
-                  Manage
-                </a>
+      <section className="cd-grid-bots">
+        {bots.map((bot) => (
+          <article key={bot.id} className="cd-bot-card cd-shadow">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex min-w-0 items-start gap-3">
+                <h3 className="cd-bot-title m-0 text-lg font-semibold text-[#03143a]">
+                  {bot.bot_name}
+                </h3>
               </div>
-            ))}
+              {bot.archived ? (
+                <span className="cd-pill-inactive">archived</span>
+              ) : bot.document_count > 0 ? (
+                <span className="cd-pill-dark">active</span>
+              ) : (
+                <span className="cd-pill-inactive">inactive</span>
+              )}
+            </div>
+
+            <p className="mt-2 text-sm text-[#4d6180] line-clamp-2">
+              {bot.description || "Handles common customer inquiries and support tickets"}
+            </p>
+
+            <div className="mt-3 flex items-center gap-2 text-[#3d5578]">
+              <svg viewBox="0 0 24 24" fill="none" className="cd-icon-sm stroke-current">
+                <path d="M7 3.8h7.6L20 9.2V20a1 1 0 01-1 1H7a1 1 0 01-1-1V4.8a1 1 0 011-1z" strokeWidth="1.6" />
+                <path d="M14.6 3.8V9.2H20M9 13h7M9 16h5" strokeWidth="1.6" />
+              </svg>
+              <span className="text-base">
+                {bot.document_count} documents
+              </span>
+            </div>
+            <p className="mt-1 text-sm text-[#4f6586]">
+              Created {new Date(bot.created_at).toLocaleDateString()}
+            </p>
+
+            <div className="cd-bot-actions">
+              <a href={`/dashboard/bots?botId=${bot.id}&section=manage`} className="cd-btn-dark cd-bot-manage-btn">
+                Manage
+              </a>
+              <a href={`/dashboard/bots?botId=${bot.id}&section=chat`} className="cd-btn-light h-[42px]">
+                <svg viewBox="0 0 24 24" fill="none" className="cd-icon-sm stroke-current">
+                  <path d="M4 6.5A2.5 2.5 0 016.5 4h11A2.5 2.5 0 0120 6.5v6A2.5 2.5 0 0117.5 15H9l-3.5 3v-3.6A2.5 2.5 0 014 12V6.5z" strokeWidth="1.6" />
+                </svg>
+                Test
+              </a>
+              <button
+                type="button"
+                className="cd-delete-btn text-[#ff2435] disabled:opacity-40"
+                disabled={deletingBotId === bot.id}
+                onClick={() => void onDeleteBot(bot)}
+                aria-label={`Delete ${bot.bot_name}`}
+              >
+                <img src="/delete.svg" alt="Delete" className="cd-icon-sm" />
+              </button>
+            </div>
+          </article>
+        ))}
+      </section>
+
+      {status ? <p className="cd-status mt-4">{status}</p> : null}
+
+      {showCreateModal ? (
+        <div className="cd-modal-overlay">
+          <div className="cd-modal cd-shadow">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="m-0 text-[25px] font-semibold text-[#06163a] scale-[0.62] origin-left -mb-2">
+                  Create New Bot
+                </h3>
+                <p className="m-0 text-[28px] text-[#5d7091] scale-[0.5] origin-left -mb-2">
+                  Set up a new document-aware chatbot for your use case
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCreateModal(false)}
+                className="rounded-md p-1 text-[#6f7f9b] hover:bg-[#eef2f7]"
+              >
+                <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5 stroke-current">
+                  <path d="M6 6l12 12M18 6L6 18" strokeWidth="1.7" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              <label className="block">
+                <span className="block text-[26px] font-medium text-[#0a1b42] scale-[0.5] origin-left -mb-2">Bot Name</span>
+                <input
+                  value={newBotName}
+                  onChange={(e) => setNewBotName(e.target.value)}
+                  className="cd-input"
+                  placeholder="e.g., Customer Support Bot"
+                />
+              </label>
+              <label className="block">
+                <span className="block text-[26px] font-medium text-[#0a1b42] scale-[0.5] origin-left -mb-2">Description</span>
+                <textarea
+                  value={newBotDescription}
+                  onChange={(e) => setNewBotDescription(e.target.value)}
+                  className="cd-textarea"
+                  placeholder="What will this bot help with?"
+                />
+              </label>
+            </div>
+
+            <div className="mt-4 flex justify-end gap-2">
+              <button type="button" className="cd-btn-light h-10 px-4" onClick={() => setShowCreateModal(false)}>
+                Cancel
+              </button>
+              <button type="button" className="cd-btn-dark h-10 px-4" onClick={() => void onCreateBot()} disabled={creating}>
+                {creating ? "Creating..." : "Create Bot"}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
+      ) : null}
+    </AppShell>
   );
 }
 
-function StatCard({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="panel rounded-lg p-4">
-      <p className="text-xs uppercase tracking-wide text-purple-200/70">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-purple-100">{value}</p>
-    </div>
-  );
+function readError(err: unknown, fallback: string): string {
+  if (err instanceof Error) {
+    return err.message;
+  }
+  if (typeof err === "object" && err !== null && "detail" in err) {
+    const detail = (err as { detail?: unknown }).detail;
+    if (typeof detail === "string") {
+      return detail;
+    }
+  }
+  return fallback;
 }

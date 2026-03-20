@@ -1,0 +1,102 @@
+[
+  {
+    "query": "Logical Access Controls",
+    "expected_sections": ["logical access controls"],
+    "type": "lookup"
+  },
+  {
+    "query": "Business Continuity / Disaster Recovery Planning",
+    "expected_sections": ["business continuity / disaster recovery planning"],
+    "type": "lookup"
+  },
+  {
+    "query": "Storage and Movement of Backup Media",
+    "expected_sections": ["storage and movement of backup media"],
+    "type": "lookup"
+  },
+  {
+    "query": "Physical Access Controls",
+    "expected_sections": ["physical access controls"],
+    "type": "lookup"
+  },
+  {
+    "query": "Change Control",
+    "expected_sections": ["change control"],
+    "type": "lookup"
+  },
+  {
+    "query": "How is access to systems controlled?",
+    "expected_sections": ["logical access controls"],
+    "type": "semantic"
+  },
+  {
+    "query": "How does the company handle disaster recovery?",
+    "expected_sections": ["business continuity / disaster recovery planning"],
+    "type": "semantic"
+  },
+  {
+    "query": "How is backup data stored?",
+    "expected_sections": ["business continuity / disaster recovery planning"],
+    "type": "semantic"
+  },
+  {
+    "query": "How are IT changes managed?",
+    "expected_sections": ["change control"],
+    "type": "semantic"
+  },
+  {
+    "query": "How are user permissions handled?",
+    "expected_sections": ["logical access controls"],
+    "type": "semantic"
+  },
+  {
+    "query": "Explain disaster recovery planning in detail",
+    "expected_sections": ["business continuity / disaster recovery planning"],
+    "type": "explain"
+  },
+  {
+    "query": "Explain backup and restoration process",
+    "expected_sections": ["business continuity / disaster recovery planning"],
+    "type": "explain"
+  },
+  {
+    "query": "Explain access control policies",
+    "expected_sections": ["logical access controls"],
+    "type": "explain"
+  },
+  {
+    "query": "Explain how backup media is handled",
+    "expected_sections": ["business continuity / disaster recovery planning"],
+    "type": "explain"
+  },
+  {
+    "query": "What is RTO?",
+    "expected_sections": ["business continuity / disaster recovery planning"],
+    "type": "fact"
+  },
+  {
+    "query": "Who executes backup procedures?",
+    "expected_sections": ["business continuity / disaster recovery planning"],
+    "type": "fact"
+  },
+  {
+    "query": "How often are backups performed?",
+    "expected_sections": ["business continuity / disaster recovery planning"],
+    "type": "fact"
+  },
+  {
+    "query": "Who approves access rights?",
+    "expected_sections": ["logical access controls"],
+    "type": "fact"
+  },
+  {
+    "query": "Difference between logical and physical access control",
+    "expected_sections": ["logical access controls", "physical access controls"],
+    "type": "multi"
+  },
+  {
+    "query": "What happens if backup media is compromised?",
+    "expected_sections": ["business continuity / disaster recovery planning"],
+    "type": "edge"
+  }
+]
