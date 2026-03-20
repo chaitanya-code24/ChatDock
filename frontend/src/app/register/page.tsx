@@ -44,6 +44,14 @@ export default function RegisterPage() {
 
   return (
     <div className="auth-page">
+      <Link
+        href="/"
+        className="fixed top-6 left-6 z-20 inline-flex items-center gap-2 rounded-full border border-[#cfd8e4] bg-white/92 px-4 py-2 text-sm font-semibold text-[#0c214b] shadow-[0_10px_24px_rgba(26,42,74,0.08)] transition hover:bg-white"
+      >
+        <span aria-hidden="true">←</span>
+        <span>Back to home</span>
+      </Link>
+
       <div className="auth-shell">
         <aside className="auth-brand">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/25 px-3 py-1 text-xs font-semibold">

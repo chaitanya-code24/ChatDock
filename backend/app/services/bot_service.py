@@ -7,7 +7,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import delete, func, select
 
 from app.database.connection import get_db_session, use_database, store
-from app.database.models import BotORM, ChatLogORM, ChunkORM, DocumentORM
+from app.database.models import BotORM, ChatLogORM, ChatThreadORM, ChunkORM, DocumentORM
 from app.models.bot_model import BotRecord
 from app.rag.vector_store import vector_store
 from app.schemas.bot_schema import BotSummary, BotUpdate
@@ -179,6 +179,7 @@ class BotService:
                     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bot not found")
 
                 db.execute(delete(ChatLogORM).where(ChatLogORM.bot_id == bot_id))
+                db.execute(delete(ChatThreadORM).where(ChatThreadORM.bot_id == bot_id))
                 db.execute(delete(ChunkORM).where(ChunkORM.bot_id == bot_id))
                 db.execute(delete(DocumentORM).where(DocumentORM.bot_id == bot_id))
                 db.delete(bot)
@@ -199,6 +200,9 @@ class BotService:
         log_ids = [log_id for log_id, log in store.chat_logs.items() if log.bot_id == bot_id]
         for log_id in log_ids:
             store.chat_logs.pop(log_id, None)
+        thread_ids = [thread_id for thread_id, thread in store.chat_threads.items() if thread.bot_id == bot_id]
+        for thread_id in thread_ids:
+            store.chat_threads.pop(thread_id, None)
 
     @staticmethod
     def _to_record(record: BotORM) -> BotRecord:
