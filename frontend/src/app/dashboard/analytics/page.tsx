@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 import { AppShell } from "../../../components/dashboard/app-shell";
 import { getToken } from "../../../services/auth";
@@ -22,9 +22,13 @@ export default function AnalyticsPage() {
   const [bots, setBots] = useState<Bot[]>([]);
   const [status, setStatus] = useState("");
   const [tab, setTab] = useState<InsightTab>("usage");
+  const [selectedBotId, setSelectedBotId] = useState(() => {
+    if (typeof window === "undefined") {
+      return "";
+    }
+    return new URLSearchParams(window.location.search).get("botId") ?? "";
+  });
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const selectedBotId = searchParams.get("botId") ?? "";
 
   useEffect(() => {
     const token = getToken();
@@ -62,6 +66,7 @@ export default function AnalyticsPage() {
 
   function onBotChange(botId: string) {
     const target = botId ? `/dashboard/analytics?botId=${botId}` : "/dashboard/analytics";
+    setSelectedBotId(botId);
     router.replace(target);
   }
 

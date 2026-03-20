@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 import { clearSession } from "../../services/auth";
 
@@ -22,13 +22,12 @@ function NavItem({ href, label, icon, active }: { href: string; label: string; i
 
 export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
-  const router = useRouter();
   const dashboardActive = pathname === "/dashboard" || pathname.startsWith("/dashboard/bots");
   const analyticsActive = pathname.startsWith("/dashboard/analytics");
 
   function onLogout() {
     clearSession();
-    router.push("/login");
+    window.location.replace("/login");
   }
 
   return (
