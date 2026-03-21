@@ -3,6 +3,12 @@ import os
 from pydantic import BaseModel, Field
 
 
+def _split_csv_env(value: str | None) -> list[str]:
+    if not value:
+        return []
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
 class Settings(BaseModel):
     project_name: str = "ChatDock API"
     target_response_time: str = "1-2 seconds"
@@ -17,10 +23,14 @@ class Settings(BaseModel):
     auth_token_ttl_seconds: int = Field(default=60 * 60 * 12)
     secret_key: str = os.getenv("SECRET_KEY", "chatdock-dev-secret")
     environment: str = os.getenv("ENVIRONMENT", "development")
+    cors_origins: list[str] = Field(
+        default_factory=lambda: _split_csv_env(os.getenv("CORS_ORIGINS"))
+    )
 
     database_url: str = os.getenv("DATABASE_URL", "postgresql+psycopg://postgres:postgres@localhost:5432/chatdock")
     redis_url: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     qdrant_url: str = os.getenv("QDRANT_URL", "http://localhost:6333")
+    qdrant_api_key: str | None = os.getenv("QDRANT_API_KEY")
     qdrant_collection: str = os.getenv("QDRANT_COLLECTION", "chatdock_chunks")
 
     llm_provider: str = os.getenv("LLM_PROVIDER", "openai")

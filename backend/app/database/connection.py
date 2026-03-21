@@ -64,6 +64,11 @@ def init_db() -> None:
     _database_available = None
     _database_available = use_database()
     if _database_available:
+        # Import models before create_all so SQLAlchemy knows about every table.
+        from app.database import models  # noqa: F401
+
+        if Base is not None and engine is not None:
+            Base.metadata.create_all(bind=engine)
         _ensure_runtime_schema()
 
 

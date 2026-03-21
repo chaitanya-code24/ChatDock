@@ -44,7 +44,7 @@ class VectorStore:
         self._client = None
         if QdrantClient is not None and qmodels is not None:
             try:
-                client = QdrantClient(url=settings.qdrant_url)
+                client = QdrantClient(url=settings.qdrant_url, api_key=settings.qdrant_api_key)
                 self._ensure_collection(client)
                 self._client = client
             except Exception:
