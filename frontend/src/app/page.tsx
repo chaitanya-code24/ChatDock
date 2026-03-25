@@ -27,8 +27,8 @@ export default function HomePage() {
       <header className="border-b border-[#d3dbe6] bg-[#f8fafc]/95 backdrop-blur">
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-6">
           <Link href="/" className="inline-flex items-center gap-3">
-            <span className="inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-[12px] border border-[#d5dce6] bg-white shadow-[0_10px_24px_rgba(33,49,79,0.08)]">
-              <Image src="/chatdock.png" alt="ChatDocks logo" width={40} height={40} className="h-10 w-10 object-cover" />
+            <span className="inline-flex h-10 w-10 items-center justify-center overflow-hidden">
+              <Image src="/chatdock.svg" alt="ChatDocks logo" width={40} height={40} className="h-10 w-10 object-contain" />
             </span>
             <span className="text-xl font-bold">ChatDock</span>
           </Link>
