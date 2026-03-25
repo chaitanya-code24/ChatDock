@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 const projectTags = ["FastAPI", "Next.js", "Qdrant", "Docker"];
 
@@ -26,11 +27,8 @@ export default function HomePage() {
       <header className="border-b border-[#d3dbe6] bg-[#f8fafc]/95 backdrop-blur">
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-6">
           <Link href="/" className="inline-flex items-center gap-3">
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-[9px] bg-[#2459ea] text-white">
-              <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 stroke-current">
-                <rect x="3.5" y="7" width="17" height="12.5" rx="2.5" strokeWidth="1.7" />
-                <path d="M8 7V5.6A1.6 1.6 0 019.6 4h4.8A1.6 1.6 0 0116 5.6V7M9 12h6M12 9v6" strokeWidth="1.7" />
-              </svg>
+            <span className="inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-[12px] border border-[#d5dce6] bg-white shadow-[0_10px_24px_rgba(33,49,79,0.08)]">
+              <Image src="/chatdock.png" alt="ChatDocks logo" width={40} height={40} className="h-10 w-10 object-cover" />
             </span>
             <span className="text-xl font-bold">ChatDock</span>
           </Link>
